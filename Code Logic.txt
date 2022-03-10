@@ -1,0 +1,84 @@
+SQL Table Schema:-
+ID (Auto Incremented)
+	Emp Code
+	Dept
+	Score
+	Date Created
+	Last Modified
+1
+	E8
+	D2
+	88
+	10-02-2022
+	08-03-2022
+2
+	E1
+	D1
+	89
+	15-02-2022
+	08-03-2022
+3
+	E36
+	Unthink
+	10
+	01-03-2022
+	08-03-2022
+and so on.
+
+URLs:
+/employees/ -- When this is hit, all the data in database shall be fetched
+/employees/?chunk=() -- Use the chuck number if negative response error
+
+Code Logic:-
+
+    Consider, When no chunk/query parameter is provided
+        - Fetch all data from database --
+            3 Queries could be used (Queries yet to be designed following are just the pseudo queries) -- JSON AUTO at the end of query will covert the result to JSON format (Yet to try this haven't done this earlier)
+
+            a = SELECT Emp CODE, Dept, Score WHERE Dept != 'Unthink' AND Date Created <= Now()-14days() sort by score
+            b = SELECT Emp CODE, Dept, Score WHERE Dept = 'Unthink'
+            c = SELECT Emp CODE, Dept, Score WHERE Date Created >= Now()-14days()
+
+        Suppose,
+        a, b, c are json for list with length 9, 4, 4 respectively
+        lastIndex = 4 #Where the last entry was inserted
+        for i in range(0, len(b),2)
+            a.insert(lastIndex, b[i])
+            a.insert(lastIndex+1, b[i+1])
+            lastIndex=lastIndex+6
+
+        lastIndex = 6 #Where the last entry was inserted
+        for i in range(0, len(c),2)
+            a.insert(lastIndex, b[i])
+            a.insert(lastIndex+1, b[i+1])
+            lastIndex=lastIndex+7
+        Now 'a' will have the out in the format of 2.c
+
+    Following are few scenarios on which I have doubt:-
+    ​1. Point 2.b says, "Application will then return the results/employees sorted in descending order of score in JSON response" Is this post point 2.c manuplation? OR Point 2.b and 2.c will be sent as different results.
+    2. What happens when any of the results list isn't to make the pattern as 4(first 4 enteries from a), 2(next 2 enteries from b), 2(next 2 enteries from c) and so on.
+    For instance, a has only 2 results and b has 5 and c has 1, then what is the expected out put?
+
+    When chunk given
+        - Make queries as in above and store the data
+        - All data needs to be fetched irrespective of chunk is given or not
+        - if chunk = 3
+        fetch result a[(chunk*20)-20:(chunk*20)-1] #Fetch index values 40 to 59
+         
+        #if chunk is 1 --- 0 to 19
+        #if chunk is 2 --- 20 to 39
+        and so on
+
+    What if the length of result is 60 and chunk = 4, then what should the result be? as the index would be out of range.
+
+
+Doubts response:-
+
+1. Point 2.b says, "Application will then return the results/employees sorted in descending order of score in JSON response" Is this post point 2.c manuplation? OR Point 2.b and 2.c will be sent as different results.
+A. All other employees' details which are not included in special cases i(,e 5th,6th, 7th, 8th row ) have to be arranged in descending order of score as shown in the document. I,e. after 7th row, you can see that the next 4 rows are also arranged in descending order of score in continuation with the first batch.
+
+2. What happens when any of the results list isn't to make the pattern as 4(first 4 enteries from a), 2(next 2 enteries from b), 2(next 2 enteries from c) and so on.For instance, a has only 2 results and b has 5 and c has 1, then what is the expected out put?
+A. Need to not worry about this scenario to keep the use case simple. You can insert the data in such a way that a similar scenario doesn't occur or in case you want to include it , then you can send 400 status with some appropriate status description. Note! it's only optional.
+
+3. What if the length of result is 60 and chunk = 4, then what should the result be? as the index would be out of range.
+A.  In such cases where the range of the list using chunk is going beyond the available length of result, you can send 400 status with some appropriate status description.
